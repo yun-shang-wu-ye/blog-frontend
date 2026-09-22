@@ -16,7 +16,10 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'token' && !e.newValue) {
     const authStore = useAuthStore()
     authStore.logout()
-    router.push('/login')
+    // 只在当前在后台时才跳转
+    if (router.currentRoute.value.path === '/admin') {
+      router.push('/login')
+    }
   }
 })
 
