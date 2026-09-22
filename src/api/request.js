@@ -1,24 +1,33 @@
 import axios from 'axios'
 
-// 创建 axios 实例
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
-  timeout: 15000,   // Railway 冷启动可能慢，超时加长
+  timeout: 15000,
 })
-request.interceptors.request.use(config=>{
-  const token =localStorage.getItem('token')
-  if (token)
-  {
+
+// 请求拦截器：带上 token
+request.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
 
-// 响应拦截器：统一处理返回结果
+// ✅ 只注册一个响应拦截器
 request.interceptors.response.use(
-  response => response.data,        // 成功时直接返回 data，省去 res.data 的写法
+  response => response.data,      // 直接返回 data
   error => {
-    console.error('请求失败:', error)
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('username')
+      // 避免在登录页反复跳转造成死循环
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
+    } else {
+      console.error('请求失败:', error)
+    }
     return Promise.reject(error)
   }
 )
